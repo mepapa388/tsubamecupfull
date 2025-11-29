@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ツバメカップ2025 技チェック</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  padding: 15px;
+  background: #f6faff;
+}
+h1 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+.section-title {
+  margin-top: 25px;
+  font-weight: bold;
+  font-size: 18px;
+  border-left: 6px solid #0a84ff;
+  padding-left: 8px;
+}
+.tech-item {
+  background: white;
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.tech-name {
+  display: flex;
+  flex-direction: column;
+}
+.tech-title {
+  font-size: 14px;
+}
+.tech-pt-label {
+  font-size: 11px;
+  color: #666;
+}
+.tech-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 80px;
+}
+.multilabel {
+  font-size: 11px;
+}
+.total-box {
+  background: #fff7d1;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 20px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.total-main {
+  font-size: 20px;
+  font-weight: bold;
+}
+.warning {
+  color: red;
+  font-weight: bold;
+  display: none;
+  margin-bottom: 8px;
+}
+button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: #0a84ff;
+  color: white;
+  border-radius: 8px;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>ツバメカップ2025 技チェック</h1>
+<p>最大<strong>30技まで</strong>選択可能 ／ 任意の技を<strong>1.5倍</strong>にできます。</p>
+
+<p class="warning" id="warn">⚠ 技は30個までしか選べません</p>
+
+<div id="tech-list"></div>
+
+<div class="total-box">
+  <div>フルマークダラー合計点：<span id="fmd-total">0</span> 点</div>
+  <div>基礎点合計：<span id="base-total">0</span> 点</div>
+  <div class="total-main">最終合計点：<span id="final-total">0</span> 点</div>
+</div>
+
+<button onclick="resetAll()">すべて解除</button>
+
+<script>
+// --- 技データ（点数→技一覧） ---
+const tricks = {
+  1: ["紐かけ手乗せ","お手玉","どじょうすくい","メリーゴーランド","初詣","手乗せジャンプ","脚下から回す","線香花火","ブーメランキャッチ","ベルト"],
+  2: ["つばめ返し","ひばり返し","リフティング","つなわたり","紐のせ","日本一周","ツイスト片道","お手玉足抜き","カメレオン","フック"],
+  3: ["トンネルつなわたり","腰かけ","手からメリーゴーランド（3周）","ツイスト往復","トランポリン（3回）","おちょこ","タケコプター","二段ゴマ","サンズ（1回）","燈籠","クロスキャッチ"],
+  4: ["指のせ","大車輪","かざぐるま","竜巻","へび（3周）","牛若丸片道","渦潮（上下2回）","メダル","舞妓かけ","コメタ","ムチ1回","胴回し","脚くぐし（1回）"],
+  5: ["砂時計","はやぶさ返し","鯉の滝登り","両手へび","足かけ","空中大車輪","足乗せ","縦へび3周","シングルクロック","チョップスティック","リキャプチャー型グリーントライアングル","ゼロスタ","クロスキャッチフォール","ダイレクト綱渡り"],
+  6: ["地獄車3周","白刃取り","燕尾返し","オープンウィップ1回","背くぐし1回","トルネード1回","リフティング〜直大車輪","ピルエット（ひものせ〜ひものせ）","ザリガニ釣り","片白刃","登り龍（5周）"],
+  7: ["鎖鎌","夜叉車","首切り〜腰切り〜脚切り","忍者","脚くぐし in out","かまいたち3セット in 両手へび","レール","むち3","ゼロスタウィップ","リリーススタート","ストリングトルネード","オロチ"],
+  8: ["同時2個空中手のせ","くるりんぱ（3回）","背面ムチ","かまいたち3セット〜太陽系1周","縦へび4周〜灯籠","歯車","二回転白刃取り","砂時計〜裏燈籠","Vレール（2回）","背面チョップスティック","侍ウィップ","侍キャッチ","ダイレクトむち3","へび2往復","脚下オープンウィップ","ニシキヘビ","背面燈籠"],
+  9: ["リュウグウノツカイ","ウロボロス","スラックライン","背面オープンウィップ","背面両手へび","サイドワインダー2.0","両面ちょんかけ","夜刀神","クエンティン・ウィップ","渦潮〜燈籠","4DEX","フットクラッチ","フットトス蛇","ダブルピルエット白刃取り","アームグラインドウィップ","背面ダイレクトむち3"],
+  10: ["ダイレク燈籠","2個うずしお3回","てじなーにゃむち","ヤトボロス"]
+};
+
+// --- 表示生成 ---
+const wrap = document.getElementById("tech-list");
+
+Object.keys(tricks).forEach(pt => {
+  const section = document.createElement("div");
+  section.innerHTML = `<div class='section-title'>${pt}点技</div>`;
+  
+  tricks[pt].forEach(name => {
+    const item = document.createElement("div");
+    item.className = "tech-item";
+    item.innerHTML = `
+      <div class="tech-name">
+        <span class="tech-title">${name}</span>
+        <span class="tech-pt-label">${pt}点技</span>
+      </div>
+      <div class="tech-controls">
+        <label class="multilabel">
+          <input type="checkbox" class="multi" />1.5倍
+        </label>
+        <input type="checkbox" class="chk" data-pt="${pt}" />
+      </div>
+    `;
+    section.appendChild(item);
+  });
+
+  wrap.appendChild(section);
+});
+
+const warn = document.getElementById("warn");
+
+// スコア表示
+const fmdSpan = document.getElementById("fmd-total");
+const baseSpan = document.getElementById("base-total");
+const finalSpan = document.getElementById("final-total");
+
+// スコア表示用フォーマット（少数は1桁まで）
+function formatScore(value) {
+  return Number.isInteger(value) ? value : value.toFixed(1);
+}
+
+// --- 計算 ---
+function calcTotal() {
+  const items = document.querySelectorAll(".tech-item");
+
+  let selectedCount = 0;
+  let fmdTotal = 0;
+  let baseTotal = 0;
+
+  items.forEach(item => {
+    const chk = item.querySelector(".chk");
+    const multi = item.querySelector(".multi");
+    if (chk.checked) {
+      selectedCount++;
+      const basePt = Number(chk.dataset.pt); // 技の基礎点（1〜10）
+      
+      // フルマークダラー: 点数^2
+      let fmd = basePt * basePt;
+      if (multi.checked) {
+        fmd *= 1.5; // 1.5倍指定
+      }
+
+      fmdTotal += fmd;
+      baseTotal += basePt;
+    }
+  });
+
+  // 警告は、選択数が30を超えている時だけ表示
+  if (selectedCount > 30) {
+    warn.style.display = "block";
+  } else {
+    warn.style.display = "none";
+  }
+
+  const finalTotal = fmdTotal + baseTotal;
+
+  fmdSpan.textContent = formatScore(fmdTotal);
+  baseSpan.textContent = formatScore(baseTotal);
+  finalSpan.textContent = formatScore(finalTotal);
+}
+
+// --- チェックボックスの制御 ---
+document.querySelectorAll(".chk").forEach(chk => {
+  chk.addEventListener("change", e => {
+    const checks = document.querySelectorAll(".chk:checked");
+    if (checks.length > 30 && e.target.checked) {
+      // 30個を超えたら元に戻して警告を表示
+      e.target.checked = false;
+      warn.textContent = "⚠ 技は30個までしか選べません";
+      warn.style.display = "block";
+      return;
+    }
+    calcTotal();
+  });
+});
+
+// 1.5倍側は選択数制限には関係しないので、変更のたびに再計算のみ
+document.querySelectorAll(".multi").forEach(m => {
+  m.addEventListener("change", calcTotal);
+});
+
+// --- リセット ---
+function resetAll() {
+  document.querySelectorAll(".chk").forEach(c => (c.checked = false));
+  document.querySelectorAll(".multi").forEach(c => (c.checked = false));
+  calcTotal();
+}
+</script>
+
+</body>
+</html>
